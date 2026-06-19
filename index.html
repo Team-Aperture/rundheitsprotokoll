@@ -189,11 +189,6 @@ canvas{position:relative;z-index:2;display:block;width:100%;height:min(72vw,560p
 .success{margin-top:70px;margin-bottom:80px;display:none}
 .success.visible{display:block;animation:textIntro .7s ease both}
 .coordinates{margin:18px 0;padding:18px;border-radius:18px;background:rgba(98,255,156,.11);border:1px solid rgba(98,255,156,.35);font-size:clamp(1.25rem,4vw,2rem);font-weight:950;letter-spacing:.04em;color:#fff;text-align:center;text-shadow:0 0 18px rgba(98,255,156,.4);font-variant-numeric:tabular-nums}
-.bts-box{margin-top:26px;padding:18px;border-radius:22px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12)}
-.bts-box h2{margin:0 0 8px;font-size:clamp(1.2rem,3vw,1.7rem)}
-.bts-video{margin-top:16px;overflow:hidden;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.24);aspect-ratio:16/9}
-.bts-video iframe{width:100%;height:100%;border:0;display:block}
-.bts-note{margin-top:12px;font-size:.95rem;color:var(--muted);line-height:1.55}
 .small{color:var(--muted);line-height:1.6}
 
 /* ── floating controls ────────────────────────────────────────── */
@@ -320,9 +315,8 @@ canvas{position:relative;z-index:2;display:block;width:100%;height:min(72vw,560p
     <h1 data-i18n="successTitle">Rundheitsprotokoll bestanden.</h1>
     <p data-i18n="successText">Die Anlage ist widerwillig zufrieden. Koordinatenfreigabe erteilt. Danke fürs Spielen!</p>
     <!-- ▼▼▼  ECHTE CACHE-KOORDINATEN HIER EINTRAGEN  ▼▼▼ -->
-    <div class="coordinates" id="coords">N 49° 00.748&nbsp;&nbsp; E 012° 07.459</div>
+    <div class="coordinates" id="coords">N 49° 00.748′ E 12° 07.459</div>
     <!-- ▲▲▲ -->
-    </div>
     <p class="small" data-i18n="restartJoke">Sie dürfen das Protokoll erneut starten. Dies wird nichts freischalten. Die Anlage wollte es nur erwähnen.</p>
     <button id="restartBtn" data-i18n="restart">Protokoll erneut starten</button>
   </section>
@@ -384,8 +378,8 @@ const translations={
     audioOn:"Audio enabled.",audioOff:"Audio disabled.",
     tickle:"Please do not tickle us. We are sensitive test robots.",
     tooShort:"Insufficient line quantity detected. The facility does not grade thought experiments.",
-    glueSlip:"Oops, sorry — this UHU glue stick is quite bad.",
-    reglueIntro:"Oops. Well, looks like the UHU isn't good enough after all. Let me fix that.",
+    glueSlip:"Oops, sorry; this glue stick is quite bad.",
+    reglueIntro:"Oops. Well, looks like it isn't good enough after all. Let me fix that.",
     regluePrefix:"Hold on… ",
     reglueDone:"…alright, reglued. Sorry about that, keep going.",
     magnet:"Magnetic-field interference detected. Please ignore the drift.",
@@ -454,7 +448,7 @@ function setFeedback(txt,cls){
 
 /* ───────────────── start / restart ───────────────── */
 $('startBtn').addEventListener('click',()=>{
-  setAudioEnabled(true);playSound(startAudio);hero.classList.add('started');
+  playSound(startAudio);hero.classList.add('started');
   setTimeout(()=>{game.classList.add('active');game.scrollIntoView({behavior:'smooth',block:'start'});resizeCanvas()},520);
 });
 $('restartBtn').addEventListener('click',()=>{
@@ -759,7 +753,7 @@ function passProtocol(){
 function decryptCoords(el){
   const final=el.dataset.final||el.textContent;el.dataset.final=final;
   if(reduceMotion){el.textContent=final;return;}
-  const glyphs='0123456789°NEWSXKM.•/';let frame=0;const total=20;
+  const glyphs='0123456789°′NEWSXKM.•/';let frame=0;const total=20;
   const id=setInterval(()=>{
     frame++;
     el.textContent=final.split('').map((ch,i)=>{
