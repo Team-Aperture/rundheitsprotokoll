@@ -320,13 +320,8 @@ canvas{position:relative;z-index:2;display:block;width:100%;height:min(72vw,560p
     <h1 data-i18n="successTitle">Rundheitsprotokoll bestanden.</h1>
     <p data-i18n="successText">Die Anlage ist widerwillig zufrieden. Koordinatenfreigabe erteilt. Danke fürs Spielen!</p>
     <!-- ▼▼▼  ECHTE CACHE-KOORDINATEN HIER EINTRAGEN  ▼▼▼ -->
-    <div class="coordinates" id="coords">N 49° XX.XXX&nbsp;&nbsp; E 012° XX.XXX</div>
+    <div class="coordinates" id="coords">N 49° 00.748&nbsp;&nbsp; E 012° 07.459</div>
     <!-- ▲▲▲ -->
-    <div class="bts-box">
-      <h2 data-i18n="btsTitle">Bonusinhalt freigeschaltet: Hinter den Kulissen</h2>
-      <p data-i18n="btsText">Die Anlage hat Zugriff auf irrelevante, aber emotional wertvolle Zusatzdaten gewährt: Wut beim Coden, spontane Playtests und die Frage: „Hey Amy? Kannst du das mal testen?“</p>
-      <div class="bts-video"><iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID_HERE" title="Behind the scenes video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
-      <div class="bts-note" data-i18n="btsNote">Dieses Video ist komplett optional und enthält keine weiteren Informationen zum Finden des Caches. Wirklich nicht.</div>
     </div>
     <p class="small" data-i18n="restartJoke">Sie dürfen das Protokoll erneut starten. Dies wird nichts freischalten. Die Anlage wollte es nur erwähnen.</p>
     <button id="restartBtn" data-i18n="restart">Protokoll erneut starten</button>
@@ -356,16 +351,13 @@ const translations={
     eggText:"Dies ist ein Kreis. Versuchen Sie, etwas Ähnliches zu erzeugen.",
     successTitle:"Rundheitsprotokoll bestanden.",
     successText:"Die Anlage ist widerwillig zufrieden. Koordinatenfreigabe erteilt. Danke fürs Spielen!",
-    btsTitle:"Bonusinhalt freigeschaltet: Hinter den Kulissen",
-    btsText:"Die Anlage hat Zugriff auf irrelevante, aber emotional wertvolle Zusatzdaten gewährt: Wut beim Coden, spontane Playtests und die Frage: „Hey Amy? Kannst du das mal testen?“",
-    btsNote:"Dieses Video ist komplett optional und enthält keine weiteren Informationen zum Finden des Caches. Wirklich nicht.",
     restartJoke:"Sie dürfen das Protokoll erneut starten. Dies wird nichts freischalten. Die Anlage wollte es nur erwähnen.",
     restart:"Protokoll erneut starten",
     audioOn:"Audio eingeschaltet.",audioOff:"Audio ausgeschaltet.",
     tickle:"Bitte nicht kitzeln. Wir sind empfindliche Testroboter.",
     tooShort:"Unzureichende Linienmenge erkannt. Die Anlage bewertet keine Gedankenexperimente.",
-    glueSlip:"Ups, sorry — dieser UHU Klebestift ist ziemlich mies.",
-    reglueIntro:"Ups. … … Nun ja, der UHU reicht wohl doch nicht. Lassen Sie mich das reparieren.",
+    glueSlip:"Ups, sorry; dieser Klebestift ist ziemlich schlecht.",
+    reglueIntro:"Ups. Nun ja, reicht wohl doch nicht. Lass mich das reparieren.",
     regluePrefix:"Moment… ",
     reglueDone:"…alles klar, neu verklebt. Tut mir leid. Weiter geht's.",
     magnet:"Magnetfeldinterferenz erkannt. Bitte ignorieren Sie das Driften.",
@@ -387,16 +379,13 @@ const translations={
     eggText:"This is a circle. Try to create something similar.",
     successTitle:"Roundness Protocol passed.",
     successText:"The facility is reluctantly satisfied. Coordinate release granted. Thank you for playing!",
-    btsTitle:"Bonus content unlocked: Behind the scenes",
-    btsText:"The facility has granted access to irrelevant but emotionally valuable extra data: coding rage, spontaneous playtests, and the question: “Hey Amy? Can you test this?”",
-    btsNote:"This video is completely optional and contains no additional information needed to find the cache. Seriously.",
     restartJoke:"You may restart the protocol. This will unlock nothing. The facility simply wanted to mention it.",
     restart:"Restart protocol",
     audioOn:"Audio enabled.",audioOff:"Audio disabled.",
     tickle:"Please do not tickle us. We are sensitive test robots.",
     tooShort:"Insufficient line quantity detected. The facility does not grade thought experiments.",
     glueSlip:"Oops, sorry — this UHU glue stick is quite bad.",
-    reglueIntro:"Oops. … … Well, looks like the UHU isn't good enough after all. Let me fix that.",
+    reglueIntro:"Oops. Well, looks like the UHU isn't good enough after all. Let me fix that.",
     regluePrefix:"Hold on… ",
     reglueDone:"…alright, reglued. Sorry about that, keep going.",
     magnet:"Magnetic-field interference detected. Please ignore the drift.",
@@ -431,7 +420,7 @@ const randomFrom=a=>a[Math.floor(Math.random()*a.length)];
 function playSound(a){if(!audioEnabled||!a)return;try{a.currentTime=0;a.play().catch(()=>{})}catch(e){}}
 function stopSound(a){if(!a)return;try{a.pause();a.currentTime=0}catch(e){}}
 
-/* ───────────────── audio + language (yours) ───────────────── */
+/* ───────────────── audio + language ───────────────── */
 function setAudioEnabled(on){
   audioEnabled=on;audioToggle.textContent=on?'🔊':'🔇';
   audioToggle.setAttribute('aria-label',on?t('audioOn'):t('audioOff'));
@@ -517,7 +506,6 @@ function startDrawing(e){
   if(audioEnabled)drawAudio.play().catch(()=>{});
 
   // schedule a glue event — only the first TWO of the whole session ever fire:
-  //   #1 → mild UHU jolt,  #2 → Gorilla-Glue reglue animation
   const tc=troll(attempts);
   clearTimeout(slipTimer);
   if(glueCount<2 && Math.random()<tc.glueChance){
