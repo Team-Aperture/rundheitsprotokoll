@@ -188,7 +188,13 @@ canvas{position:relative;z-index:2;display:block;width:100%;height:min(72vw,560p
 /* ── success ──────────────────────────────────────────────────── */
 .success{margin-top:70px;margin-bottom:80px;display:none}
 .success.visible{display:block;animation:textIntro .7s ease both}
-.coordinates{margin:18px 0;padding:18px;border-radius:18px;background:rgba(98,255,156,.11);border:1px solid rgba(98,255,156,.35);font-size:clamp(1.25rem,4vw,2rem);font-weight:950;letter-spacing:.04em;color:#fff;text-align:center;text-shadow:0 0 18px rgba(98,255,156,.4);font-variant-numeric:tabular-nums}
+.coordinates{margin:18px 0;padding:18px;border-radius:18px;background:rgba(98,255,156,.11);border:1px solid rgba(98,255,156,.35);font-size:clamp(1.25rem,4vw,2rem);font-weight:950;letter-spacing:.04em;color:#fff;text-align:center;text-shadow:0 0 18px rgba(98,255,156,.4);font-variant-numeric:tabular-nums;cursor:pointer;transition:transform .15s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.coordinates:hover,.coordinates:focus-visible{transform:translateY(-1px);background:rgba(98,255,156,.16);border-color:rgba(98,255,156,.55);box-shadow:0 0 24px rgba(98,255,156,.25);outline:none}
+.coordinates.copied{animation:pop .35s ease}
+.copy-hint{margin:-6px 0 4px;text-align:center;font-size:.85rem;color:var(--muted);transition:color .2s ease;user-select:none}
+.copy-hint.ok{color:var(--green)}
+/* ── celebration confetti overlay (on pass) ───────────────────── */
+.confetti{position:fixed;inset:0;z-index:55;pointer-events:none}
 .small{color:var(--muted);line-height:1.6}
 
 /* ── floating controls ────────────────────────────────────────── */
@@ -315,8 +321,9 @@ canvas{position:relative;z-index:2;display:block;width:100%;height:min(72vw,560p
     <h1 data-i18n="successTitle">Rundheitsprotokoll bestanden.</h1>
     <p data-i18n="successText">Die Anlage ist widerwillig zufrieden. Koordinatenfreigabe erteilt. Danke fürs Spielen!</p>
     <!-- ▼▼▼  ECHTE CACHE-KOORDINATEN HIER EINTRAGEN  ▼▼▼ -->
-    <div class="coordinates" id="coords">N 49° 00.748′ E 12° 07.459</div>
+    <div class="coordinates" id="coords" role="button" tabindex="0" data-i18n-title="copyHint">N 49° 00.748′ E 12° 07.459</div>
     <!-- ▲▲▲ -->
+    <div class="copy-hint" id="copyHint" data-i18n="copyHint">Zum Kopieren tippen</div>
     <p class="small" data-i18n="restartJoke">Sie dürfen das Protokoll erneut starten. Dies wird nichts freischalten. Die Anlage wollte es nur erwähnen.</p>
     <button id="restartBtn" data-i18n="restart">Protokoll erneut starten</button>
   </section>
@@ -347,6 +354,7 @@ const translations={
     successText:"Die Anlage ist widerwillig zufrieden. Koordinatenfreigabe erteilt. Danke fürs Spielen!",
     restartJoke:"Sie dürfen das Protokoll erneut starten. Dies wird nichts freischalten. Die Anlage wollte es nur erwähnen.",
     restart:"Protokoll erneut starten",
+    copyHint:"Zum Kopieren tippen",copied:"Koordinaten kopiert!",
     audioOn:"Audio eingeschaltet.",audioOff:"Audio ausgeschaltet.",
     tickle:"Bitte nicht kitzeln. Wir sind empfindliche Testroboter.",
     tooShort:"Unzureichende Linienmenge erkannt. Die Anlage bewertet keine Gedankenexperimente.",
@@ -375,6 +383,7 @@ const translations={
     successText:"The facility is reluctantly satisfied. Coordinate release granted. Thank you for playing!",
     restartJoke:"You may restart the protocol. This will unlock nothing. The facility simply wanted to mention it.",
     restart:"Restart protocol",
+    copyHint:"Tap to copy",copied:"Coordinates copied!",
     audioOn:"Audio enabled.",audioOff:"Audio disabled.",
     tickle:"Please do not tickle us. We are sensitive test robots.",
     tooShort:"Insufficient line quantity detected. The facility does not grade thought experiments.",
@@ -394,7 +403,12 @@ const translations={
 };
 
 /* ───────────────── state + dom ───────────────── */
-let lang="de",attempts=0,locked=false,drawing=false,points=[],audioEnabled=false,tickleTimer=null;
+/* remembered preferences (language + audio) survive a page reload */
+const PREFS_KEY='rhp-prefs';
+function loadPrefs(){try{return JSON.parse(localStorage.getItem(PREFS_KEY))||{}}catch(e){return{}}}
+function savePrefs(){try{localStorage.setItem(PREFS_KEY,JSON.stringify({lang,audio:audioEnabled}))}catch(e){}}
+const savedPrefs=loadPrefs();
+let lang=savedPrefs.lang==='en'?'en':'de',attempts=0,locked=false,drawing=false,points=[],audioEnabled=savedPrefs.audio===true,tickleTimer=null;
 let strokeStart=0,slipped=false,slipTimer=null,reversals=0,lastVel=null,gridSpin=0,spinRAF=null,glueCount=0;
 let zigArmed=false,zigging=false,zigDir=1,zigBaseX=0,lastStrokeZig=false;
 
@@ -419,15 +433,17 @@ function setAudioEnabled(on){
   audioEnabled=on;audioToggle.textContent=on?'🔊':'🔇';
   audioToggle.setAttribute('aria-label',on?t('audioOn'):t('audioOff'));
   if(on)ambientAudio.play().catch(()=>{});else[ambientAudio,drawAudio].forEach(stopSound);
+  savePrefs();
 }
 function applyLanguage(){
   document.documentElement.lang=lang;
   document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>el.title=t(el.dataset.i18nTitle));
   $('langBtn').textContent=lang==='de'?'EN':'DE';
   tickleMessage.textContent=t('tickle');
   audioToggle.setAttribute('aria-label',audioEnabled?t('audioOn'):t('audioOff'));
 }
-$('langBtn').addEventListener('click',()=>{lang=lang==='de'?'en':'de';applyLanguage()});
+$('langBtn').addEventListener('click',()=>{lang=lang==='de'?'en':'de';applyLanguage();savePrefs()});
 audioToggle.addEventListener('click',()=>{setAudioEnabled(!audioEnabled);feedback.textContent=audioEnabled?t('audioOn'):t('audioOff')});
 teamSymbol.addEventListener('click',()=>{showTickle();playSound(tickleAudio)});
 
@@ -448,6 +464,7 @@ function setFeedback(txt,cls){
 
 /* ───────────────── start / restart ───────────────── */
 $('startBtn').addEventListener('click',()=>{
+  if(audioEnabled)ambientAudio.play().catch(()=>{});   // resume remembered music on this gesture
   playSound(startAudio);hero.classList.add('started');
   setTimeout(()=>{game.classList.add('active');game.scrollIntoView({behavior:'smooth',block:'start'});resizeCanvas()},520);
 });
@@ -748,6 +765,7 @@ function passProtocol(){
     success.classList.add('visible');
     success.scrollIntoView({behavior:'smooth',block:'start'});
     decryptCoords($('coords'));
+    celebrate($('coords'));
   },700);
 }
 function decryptCoords(el){
@@ -763,6 +781,59 @@ function decryptCoords(el){
     if(frame>=total){clearInterval(id);el.textContent=final;}
   },45);
 }
+
+/* celebration burst — a short green/white confetti pop punctuating the win */
+function celebrate(originEl){
+  if(reduceMotion)return;
+  const W=window.innerWidth,H=window.innerHeight,dpr=Math.max(1,window.devicePixelRatio||1);
+  const cv=document.createElement('canvas');cv.className='confetti';cv.setAttribute('aria-hidden','true');
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+  document.body.appendChild(cv);
+  const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  // emit from the coordinates box, clamped to a visible band (smooth-scroll may still be settling)
+  let ox=W/2,oy=H*0.32;
+  if(originEl){const r=originEl.getBoundingClientRect();if(r.width){ox=r.left+r.width/2;oy=r.top+r.height/2;}}
+  ox=Math.min(Math.max(ox,W*0.1),W*0.9);oy=Math.min(Math.max(oy,H*0.15),H*0.6);
+  const colors=['#62ff9c','#f4f4f1','#ffc14a','#62ff9c','#9fd0ff'],parts=[];
+  for(let i=0;i<120;i++){
+    const ang=Math.random()*6.283,sp=3+Math.random()*7,w=4+Math.random()*5;
+    parts.push({x:ox,y:oy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-(3+Math.random()*4),
+      g:.12+Math.random()*.07,w:w,h:w*(.4+Math.random()*.5),rot:Math.random()*6.283,
+      vr:(Math.random()-.5)*.4,color:colors[i%colors.length],life:0,max:55+Math.random()*45});
+  }
+  (function step(){
+    c.clearRect(0,0,W,H);let alive=false;
+    for(const p of parts){
+      if(p.life>p.max)continue;alive=true;p.life++;
+      p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;
+      c.save();c.globalAlpha=Math.max(0,1-p.life/p.max);c.translate(p.x,p.y);c.rotate(p.rot);
+      c.fillStyle=p.color;c.fillRect(-p.w/2,-p.h/2,p.w,p.h);c.restore();
+    }
+    if(alive&&document.body.contains(cv))requestAnimationFrame(step);else cv.remove();
+  })();
+}
+
+/* copy the cache coordinates to the clipboard — handy out in the field */
+let copyTimer=null;
+function copyCoords(){
+  const el=$('coords'),hintEl=$('copyHint'),txt=(el.dataset.final||el.textContent).trim();
+  const ok=()=>{
+    el.classList.remove('copied');void el.offsetWidth;el.classList.add('copied');
+    if(hintEl){hintEl.textContent=t('copied');hintEl.classList.add('ok');}
+    clearTimeout(copyTimer);copyTimer=setTimeout(()=>{
+      if(hintEl){hintEl.textContent=t('copyHint');hintEl.classList.remove('ok');}
+    },2200);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(legacyCopy);}
+  else legacyCopy();
+  function legacyCopy(){
+    try{const ta=document.createElement('textarea');ta.value=txt;
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');ta.remove();ok();}catch(e){}
+  }
+}
+$('coords').addEventListener('click',copyCoords);
+$('coords').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();copyCoords();}});
 
 /* ───────────────── interactive logo shine ───────────────── */
 (function(){
@@ -787,6 +858,8 @@ function decryptCoords(el){
   }
 })();
 
+/* reflect a remembered audio choice in the toggle (autoplay stays blocked until the first gesture → no surprise music) */
+audioToggle.textContent=audioEnabled?'🔊':'🔇';
 applyLanguage();resizeCanvas();
 </script>
 </body>
